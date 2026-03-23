@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zmr-WhatsApp</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <script src='https://meet.jit.si/external_api.js'></script>
+
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; background: #dadbd3; height: 100vh; display: flex; flex-direction: column; }
+        
+        #login-screen { flex: 1; display: flex; justify-content: center; align-items: center; background: #f0f2f5; }
+        .login-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 17px 50px 0 rgba(0,0,0,.19); width: 350px; text-align: center; }
+        .login-box h3 { color: #008069; margin-bottom: 20px; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
+        
+        #chat-interface { display: none; flex-direction: column; height: 100vh; max-width: 600px; margin: 0 auto; width: 100%; background: #efeae2; position: relative; }
+        
+        .chat-header { background: #008069; color: white; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; height: 65px; box-shadow: 0 2px 3px rgba(0,0,0,0.1); }
+        .header-left { display: flex; align-items: center; }
+        .header-avatar { width: 40px; height: 40px; background: #dfe5e7; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; color: #54656f; font-weight: bold; }
+        
+        #message-list { 
+            flex: 1; overflow-y: auto; padding: 20px 5%; 
+            background: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); 
+            display: flex; flex-direction: column; 
+        }
+
+        .msg-bubble { position: relative; max-width: 75%; padding: 6px 8px 8px 9px; margin-bottom: 4px; font-size: 14.5px; line-height: 19px; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); border-radius: 7.5px; }
+        .sent { align-self: flex-end; background: #d9fdd3; border-top-right-radius: 0; }
+        .received { align-self: flex-start; background: #ffffff; border-top-left-radius: 0; }
+        
+        .bubble-footer { display: flex; align-items: center; justify-content: flex-end; margin-top: -2px; }
+        .msg-time { font-size: 11px; color: #667781; }
+        .check-mark { color: #53bdeb; font-size: 14px; margin-left: 3px; }
+
+        .input-bar { background: #f0f2f5; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+        #msg-input { border: none; padding: 10px 15px; border-radius: 20px; flex: 1; outline: none; font-size: 15px; background: white; }
+        .send-btn { background: #008069; border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        .status-text { font-size: 12px; }
+        .typing-indicator { color: #fff; font-style: italic; font-weight: 500; }
+        .online { color: #fff; }
+        .offline { color: #cfd8dc; }
+    
+    
+    /* Purane .input-bar ko hatakar ye paste karein */
+.input-wrapper {
+    background: #f0f2f5;
+    padding: 10px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.input-container {
+    background: white;
+    border-radius: 25px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 5px 15px;
+}
+
+.input-container i {
+    color: #8696a0;
+    font-size: 20px;
+    padding: 5px;
+}
+
+#msg-input {
+    border: none;
+    padding: 10px;
+    flex: 1;
+    outline: none;
+    background: transparent;
+}
+
+.action-btn {
+    background: #00a884;
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    
+    
+    </style>
+    
+  
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-box">
+            <h3>WhatsApp Admin</h3>
+            <input type="text" id="username" placeholder="Name">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()" style="width:100%; padding:12px; background:#00a884; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">LOG IN</button>
+            <p id="error" style="color:#d32f2f; font-size:12px; margin-top:15px;"></p>
+        </div>
+    </div>
+
+    <div id="chat-interface">
+        <div class="chat-header">
+            <div class="header-left">
+                <div class="header-avatar" id="user-initial">?</div>
+                <div>
+                    <div id="display-name" style="font-size: 16px; font-weight: 600;">Partner</div>
+                    <div id="user-status" class="status-text">Offline</div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 15px; margin-right: 15px;">
+    <i class="fa-solid fa-phone" onclick="startCall()" style="cursor:pointer"></i>
+    <i class="fa-solid fa-video" onclick="startCall()" style="cursor:pointer"></i>
+</div>
+
+            
+            <div style="font-size: 14px; cursor: pointer; opacity: 0.8;" onclick="logout()">Logout</div>
+        </div>
+        
+        <div id="message-list"></div>
+
+        <div class="input-bar">
+            <input type="text" id="msg-input" placeholder="Type a message" 
+                   oninput="handleTyping()" 
+                   onkeydown="if(event.key==='Enter') sendMessage()">
+            <button class="send-btn" onclick="sendMessage()">➔</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyA3bsKfP7CxS0Sb0CY6xu_vFogVcxbJCII",
+            authDomain: "ashcostingapp.firebaseapp.com",
+            databaseURL: "https://ashcostingapp-default-rtdb.firebaseio.com",
+            projectId: "ashcostingapp",
+            storageBucket: "ashcostingapp.firebasestorage.app",
+            messagingSenderId: "576053214259",
+            appId: "1:576053214259:web:e47a6c38721d62580fb746"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let currentUser = "";
+        let typingTimeout;
+
+        window.onload = function() {
+            const savedUser = localStorage.getItem("ash_chat_user");
+            if (savedUser) setupChat(savedUser);
+        };
+
+        function login() {
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value;
+            if ((u === "Zamir" && p === "123") || (u === "Abc" && p === "123")) {
+                localStorage.setItem("ash_chat_user", u);
+                setupChat(u);
+            } else {
+                document.getElementById('error').innerText = "Access Denied";
+            }
+        }
+
+        // --- NEW: Typing Logic ---
+        function handleTyping() {
+            db.ref('typing/' + currentUser).set(true);
+            
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                db.ref('typing/' + currentUser).set(false);
+            }, 2000); // Hide "Typing..." after 2 seconds of silence
+        }
+
+        function setupChat(user) {
+            currentUser = user;
+            const talkingTo = (user === "Zamir") ? "Abc" : "Zamir";
+            
+            document.getElementById('login-screen').style.display = "none";
+            document.getElementById('chat-interface').style.display = "flex";
+            document.getElementById('display-name').innerText = talkingTo;
+            document.getElementById('user-initial').innerText = talkingTo.charAt(0);
+
+            // Online/Offline Status
+            const myStatusRef = db.ref('status/' + user);
+            db.ref('.info/connected').on('value', (snapshot) => {
+                if (snapshot.val() === false) return;
+                myStatusRef.onDisconnect().set('offline');
+                myStatusRef.set('online');
+            });
+
+            // Monitor Partner's Status & Typing
+            db.ref('status/' + talkingTo).on('value', (statusSnap) => {
+                const status = statusSnap.val() || 'offline';
+                const statusElement = document.getElementById('user-status');
+
+                // Check Typing status from its own path
+                db.ref('typing/' + talkingTo).on('value', (typingSnap) => {
+                    if (typingSnap.val() === true) {
+                        statusElement.innerText = "typing...";
+                        statusElement.className = "status-text typing-indicator";
+                    } else {
+                        statusElement.innerText = status.charAt(0).toUpperCase() + status.slice(1);
+                        statusElement.className = "status-text " + status;
+                    }
+                });
+            });
+
+            loadMessages();
+        }
+
+        function logout() {
+            db.ref('status/' + currentUser).set('offline');
+            db.ref('typing/' + currentUser).set(false);
+            localStorage.removeItem("ash_chat_user");
+            location.reload();
+        }
+
+        function sendMessage() {
+            const inputField = document.getElementById('msg-input');
+            const text = inputField.value;
+            if (text.trim() === "") return;
+            
+            db.ref('typing/' + currentUser).set(false); // Stop typing status on send
+            const timeNow = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            
+            db.ref('messages').push({
+                sender: currentUser,
+                text: text,
+                time: timeNow
+            });
+            inputField.value = "";
+        }
+
+        function loadMessages() {
+            const list = document.getElementById('message-list');
+            db.ref('messages').on('child_added', (snapshot) => {
+                const data = snapshot.val();
+                const isMe = data.sender === currentUser;
+                const bubble = document.createElement('div');
+                bubble.className = `msg-bubble ${isMe ? 'sent' : 'received'}`;
+                bubble.innerHTML = `
+                    <div>${data.text}</div>
+                    <div class="bubble-footer">
+                        <span class="msg-time">${data.time}</span>
+                        ${isMe ? '<span class="check-mark">✓✓</span>' : ''}
+                    </div>
+                `;
+                list.appendChild(bubble);
+                list.scrollTop = list.scrollHeight; 
+            });
+        }
+        
+        
+        let api = null;
+
+function startCall(type) {
+    // Room name hamesha unique rakhein (Jaise: AshBakes_Zamir_Abc)
+    const roomName = "Zmr-WhatsApp"; 
+    document.getElementById('call-container').style.display = "block";
+    
+    const domain = "meet.jit.si";
+    const options = {
+        roomName: roomName,
+        width: '100%',
+        height: '100%',
+        parentNode: document.querySelector('#call-container'),
+        configOverwrite: { startWithAudioMuted: false, startWithVideoMuted: (type === 'audio') },
+        interfaceConfigOverwrite: { TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup', 'fittowindow'] },
+        userInfo: { displayName: currentUser }
+    };
+    
+    // Purana call api agar hai to delete karein
+    if (api) api.dispose();
+    
+    api = new JitsiMeetExternalAPI(domain, options);
+    
+    // Jab call khatam ho jaye automatically window band ho jaye
+    api.addEventListeners({
+        readyToClose: endCall,
+        videoConferenceLeft: endCall
+    });
+}
+
+function endCall() {
+    if (api) api.dispose();
+    document.getElementById('call-container').style.display = "none";
+}
+
+        
+    </script>
+    
+    <div id="call-container" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:9999;">
+    <button onclick="endCall()" style="position:absolute; top:20px; right:20px; z-index:10000; background:red; color:white; border:none; padding:10px 20px; border-radius:5px;">End Call</button>
+</div>
+
+    
+</body>
+      </html>
+      
