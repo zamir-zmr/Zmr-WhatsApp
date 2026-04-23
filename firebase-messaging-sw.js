@@ -1,5 +1,5 @@
-importScripts('https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js');
-importScripts('https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js');
+importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
+importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
 
 firebase.initializeApp({
     apiKey: "AIzaSyA3bsKfP7CxS0Sb0CY6xu_vFogVcxbJCII",
@@ -13,11 +13,14 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Jab app BAND ho tab bhi notification aaye
+// Background notification handler
 messaging.onBackgroundMessage((payload) => {
-    console.log('Background notification:', payload);
-    self.registration.showNotification(payload.notification.title, {
+    console.log('Background Message:', payload);
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
         body: payload.notification.body,
-        icon: '/icon.png'
-    });
+        icon: '/icon.png' // Apne icon ka path check karein
+    };
+
+    self.registration.showNotification(notificationTitle, notificationOptions);
 });
