@@ -681,47 +681,43 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const messaging = firebase.messaging();
         let currentUser = "";
         let typingTimeout;
+        let notificationPermission = false;
 
-        // Service Worker register karo (background notification ke liye)
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/firebase-messaging-sw.js')
-                .then(reg => {
-                    console.log('Service Worker registered ✅');
-                    messaging.useServiceWorker(reg);
-                })
-                .catch(err => console.log('SW Error:', err));
-        }
-
-        // Notification permission maango aur token Firebase mein save karo
-        function requestNotificationPermission() {
-            if (!currentUser) return;
-            Notification.requestPermission().then((permission) => {
-                if (permission === 'granted') {
-                    messaging.getToken({ 
-                        vapidKey: 'BPJA7Q6LOD92SnkC-Z7tyAgtUQdz8tBvGrdijnNDkDKAyQNc84zdI2DTYZWasZbTFZwCnq5TXGsBnhIMq1-I4uU' 
-                    }).then((token) => {
-                        if (token) {
-                            db.ref('fcmTokens/' + currentUser).set(token);
-                            console.log('Token saved ✅');
-                        }
-                    }).catch(err => console.log('Token error:', err));
+        // ✅ Notification Permission maango
+        function askNotificationPermission() {
+            if (!("Notification" in window)) return;
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    notificationPermission = true;
+                    console.log("✅ Notification allowed");
                 }
             });
         }
 
-        // Foreground notification - jab app khula ho tab bhi notification dikhe
-        messaging.onMessage((payload) => {
-            console.log('Foreground message:', payload);
-            if (payload.notification) {
-                new Notification(payload.notification.title, {
-                    body: payload.notification.body,
-                    icon: '/icon.png'
+        // ✅ Notification dikhao (sirf tab jab app background mein ho)
+        function showNotification(senderName, messageText) {
+            if (notificationPermission && document.hidden) {
+                const n = new Notification("💬 " + senderName, {
+                    body: messageText,
+                    icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png",
+                    badge: "https://cdn-icons-png.flaticon.com/512/733/733585.png",
+                    vibrate: [200, 100, 200]
                 });
+                // 3 second baad auto close
+                setTimeout(() => n.close(), 4000);
+                // Click karne par app khul jaye
+                n.onclick = () => { window.focus(); n.close(); };
             }
-        });
+        }
+
+        // ✅ Service Worker register (background notification ke liye)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                .then(reg => console.log('SW registered ✅'))
+                .catch(err => console.log('SW na mila, theek hai:', err));
+        }
 
 
 // Sirf ye EK window.onload rakhein
@@ -914,7 +910,9 @@ function setupChat(user) {
     }
 
     loadMessages();
-    requestNotificationPermission();
+
+    // ✅ Login hote hi notification permission maango
+    askNotificationPermission();
 }
 
 
@@ -974,6 +972,11 @@ function loadMessages() {
         // Auto-read logic
         if (!isMe && data.status !== "read" && document.visibilityState === 'visible') {
             db.ref('messages/' + msgId).update({ status: "read" });
+        }
+
+        // ✅ Notification dikhao jab dusre ka message aaye aur app background mein ho
+        if (!isMe) {
+            showNotification(data.sender, data.text);
         }
 
         const bubble = document.createElement('div');
