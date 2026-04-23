@@ -3,28 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zmr-WhatsApp</title>
+    <title>RZWhatsApp</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-    <script src='https://meet.jit.si/external_api.js'></script>
-
+    
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; background: #dadbd3; height: 100vh; display: flex; flex-direction: column; }
         
-        #login-screen { flex: 1; display: flex; justify-content: center; align-items: center; background: #f0f2f5; }
+        
+#login-screen { flex: 1; display: flex; justify-content: center; align-items: center; background: #f0f2f5; }
+
+/* Login Box entry animation */
+.login-box {
+    animation: slideUpFade 0.6s ease-out;
+}
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Professional Pop-up Card View */
+.advanced-popup {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: white;
+    width: 320px;
+    padding: 30px 20px;
+    border-radius: 20px;
+    text-align: center;
+    z-index: 2000;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    border-top: 6px solid #ea4335;
+}
+
+/* Shake Animation for Denied Access */
+.shake-denied {
+    animation: shake 0.4s ease-in-out !important;
+}
+
+/* Scale-up Animation for Popup Appearance */
+.pop-up-show {
+    display: block !important;
+    animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+}
+
+@keyframes popIn {
+    from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translate(-50%, -50%); }
+    25% { transform: translate(-54%, -50%); }
+    75% { transform: translate(-46%, -50%); }
+}
+
+
+
         .login-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 17px 50px 0 rgba(0,0,0,.19); width: 350px; text-align: center; }
         .login-box h3 { color: #008069; margin-bottom: 20px; }
         input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
         
         #chat-interface { display: none; flex-direction: column; height: 100vh; max-width: 600px; margin: 0 auto; width: 100%; background: #efeae2; position: relative; }
         
-        .chat-header { background: #008069; color: white; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; height: 65px; box-shadow: 0 2px 3px rgba(0,0,0,0.1); }
+        /* Real WhatsApp Header Style */
+.chat-header {
+    background: #008069; 
+    color: white; 
+    padding: 10px 16px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    height: 65px; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+/* Dropdown Menu Design */
+.dropdown-menu {
+    display: none;
+    position: absolute; 
+    right: 5px; 
+    top: 45px; 
+    background: white;
+    color: #333; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    border-radius: 4px; 
+    width: 160px; 
+    z-index: 2100; 
+    padding: 8px 0;
+    animation: fadeIn 0.2s ease;
+}
+
+.dropdown-menu div { 
+    padding: 12px 20px; 
+    cursor: pointer; 
+    font-size: 15px;
+    transition: background 0.2s;
+}
+
+.dropdown-menu div:hover { background: #f5f5f5; }
+
+/* Status Indicators */
+.status-text { font-size: 12px; font-weight: 400; }
+
+
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        
         .header-left { display: flex; align-items: center; }
         .header-avatar { width: 40px; height: 40px; background: #dfe5e7; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; color: #54656f; font-weight: bold; }
         
@@ -41,16 +137,245 @@
         .bubble-footer { display: flex; align-items: center; justify-content: flex-end; margin-top: -2px; }
         .msg-time { font-size: 11px; color: #667781; }
         .check-mark { color: #53bdeb; font-size: 14px; margin-left: 3px; }
-
-        .input-bar { background: #f0f2f5; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
-        #msg-input { border: none; padding: 10px 15px; border-radius: 20px; flex: 1; outline: none; font-size: 15px; background: white; }
-        .send-btn { background: #008069; border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         
-        .status-text { font-size: 12px; }
-        .typing-indicator { color: #fff; font-style: italic; font-weight: 500; }
-        .online { color: #fff; }
-        .offline { color: #cfd8dc; }
-    
+
+/* Default Grey Color for Sent Messages */
+.check-mark { 
+    color: #8696a0 !important; 
+    font-size: 14px; 
+    margin-left: 3px; 
+}
+
+/* Blue Color for Read Messages */
+.check-mark.blue-tick { 
+    color: #53bdeb !important; 
+}
+
+        
+/* Seen/Not Seen Icons Style */
+
+
+
+
+
+
+
+/* Jab aankh BAND (Unseen) ho */
+
+
+/* Jab aankh KHULI (Seen) ho */
+
+
+
+@keyframes eye-blink {
+    0% { transform: scaleY(1); }
+    50% { transform: scaleY(0.1); }
+    100% { transform: scaleY(1); }
+}
+
+
+.input-bar {
+    background: transparent; 
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-container {
+    background: white;
+    border-radius: 25px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    min-height: 48px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+#msg-input {
+    border: none;
+    width: 100%;
+    padding: 12px 0;
+    outline: none;
+    font-size: 16px;
+    background: transparent;
+    color: #111b21;
+}
+.msg-bubble {
+    /* ... aapka purana code ... */
+    -webkit-user-select: none; /* Safari/Chrome */
+    -ms-user-select: none;      /* IE/Edge */
+    user-select: none;          /* Standard */
+    -webkit-touch-callout: none; /* iOS Safari menu ko rokne ke liye */
+}
+
+/* Selection Mode overlay */
+
+/* Delete Action Bar (Top bar jo selection ke waqt dikhegi) */
+/* Selected message ka color change karne ke liye */
+.msg-bubble.selected {
+    background-color: #bbdefb !important;
+    transition: background-color 0.3s ease;
+}
+
+/* Upar ki Green Selection Bar */
+#selection-bar {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 65px;
+    background: #008069;
+    color: white;
+    z-index: 4000;
+    align-items: center;
+    padding: 0 20px;
+    gap: 30px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+
+/* Status Text Colors */
+.online { color: #00a88jj4 !important; } /* Green */
+.typing-indicator { color: #14ff41 !important; font-style: italic; } /* Red */
+
+
+.offline { color: #14ff41 !important; }
+
+/* Inke purane style ko replace karein */
+.status-text { font-size: 12px; display: block; margin-top: 2px; }
+
+
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Blue Tick Force Color */
+
+
+/* Blue Tick logic - Forceful Colors */
+
+
+/* Jab tick grey ho (Unread) */
+
+
+/* Blue Tick Logic */
+
+/* Default Grey color */
+
+/* Seen Blue color */
+/* Blue Tick logic - Forceful Colors */
+.status-icon .read-tick { 
+    color: #34b7f1 !important; /* WhatsApp Blue */
+}
+
+.status-icon .unread-tick { 
+    color: #8696a0 !important; /* Standard Grey */
+}
+
+
+
+
+.send-btn {
+    background: #00a884;
+    border: none;
+    color: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.send-btn i {
+    font-size: 18px;
+    margin-left: 2px; /* Plane icon ko center karne ke liye */
+}
+
+/* Compressed Input Bar Design */
+.input-bar-compressed {
+    background: transparent; 
+    padding: 6px 10px; /* Padding kam ki gayi hai space bachane ke liye */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px; /* Niche se thoda gap professional lagta hai */
+}
+
+
+.input-capsule {
+    background: white;
+    border-radius: 25px;
+    flex: 1;
+    display: flex;
+    align-items: center; /* Vertical alignment fix */
+    padding: 0 15px;
+    height: 42px; /* Fixed height */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+#msg-input {
+    border: none;
+    width: 100%;
+    height: 100%; /* Capsule ki poori height lega */
+    outline: none;
+    font-size: 16px;
+    background: transparent;
+    color: #111b21;
+    display: flex;
+    align-items: center; /* Browser internal support */
+    padding: 0; /* Extra padding hata di gayi hai */
+    margin: 0;
+}
+
+/* Placeholder text ko center karne ke liye */
+#msg-input::placeholder {
+    color: #8696a0;
+    vertical-align: middle;
+}
+
+
+
+.send-btn-small {
+    background: #00a884;
+    border: none;
+    color: white;
+    width: 42px; /* Button ka size input box ki height ke barabar */
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.send-btn-small i {
+    font-size: 16px; /* Icon size thoda chota */
+    margin-left: 2px;
+}
+
+
+        
+        /* Blue Tick Logic - CSS */
+.unread-tick {
+    color: #8696a0 !important; /* Grey Color */
+}
+
+.read-tick {
+    color: #34b7f1 !important; /* WhatsApp Blue Color */
+}
+
+
+
     
     /* Purane .input-bar ko hatakar ye paste karein */
 .input-wrapper {
@@ -95,7 +420,180 @@
     justify-content: center;
 }
 
-    
+    /* Professional Error Popup */
+.error-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    text-align: center;
+    z-index: 2000;
+    width: 280px;
+    border-top: 5px solid #ea4335;
+}
+
+
+
+
+/* Professional Blur Background */
+#blur-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(5px);
+    z-index: 1999;
+    animation: fadeIn 0.3s ease;
+}
+
+
+/* Ise check karein, display: none; hona chahiye taaki page load par na dikhe */
+.advanced-popup {
+    display: none; 
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: white;
+    width: 320px;
+    padding: 30px 20px;
+    border-radius: 20px;
+    z-index: 2000;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+/* Blur and Popup Styles */
+#blur-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(5px);
+    z-index: 1999;
+}
+
+.advanced-popup {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: white;
+    width: 320px;
+    padding: 30px 20px;
+    border-radius: 20px;
+    text-align: center;
+    z-index: 2000;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    border-top: 6px solid #ea4335; /* Professional red accent */
+    animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+}
+
+/* Shake effect for wrong password */
+.shake-animation {
+    animation: shake 0.4s ease-in-out !important;
+}
+
+@keyframes popIn { to { transform: translate(-50%, -50%) scale(1); } }
+@keyframes shake {
+    0%, 100% { transform: translate(-50%, -50%); }
+    20%, 60% { transform: translate(-55%, -50%); }
+    40%, 80% { transform: translate(-45%, -50%); }
+}
+
+.popup-icon { font-size: 50px; color: #ea4335; margin-bottom: 15px; }
+
+.popup-btn {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    background: #008069; /* WhatsApp Green */
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+
+
+
+
+/* Jab galat password ho toh ye class add hogi */
+.shake-animation {
+    animation: shake 0.4s ease-in-out !important;
+}
+
+/* Animations Logic */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { to { transform: translate(-50%, -50%) scale(1); } }
+
+@keyframes shake {
+
+
+
+/* Professional Pop-up Card View */
+.advanced-popup {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px); /* Glass effect */
+    width: 320px;
+    padding: 30px 20px;
+    border-radius: 20px;
+    text-align: center;
+    z-index: 2000;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* Professional Shadow */
+    border-top: 6px solid #ea4335; /* Error Red Accent */
+}
+
+/* Shake Animation for Access Denied */
+.denied-shake {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate(-50%, -50%) translate3d(-1px, 0, 0); }
+  
+  
+
+/* Pop-in Effect */
+.pop-in {
+    display: block !important;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popIn {
+    from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* Blue Tick logic classes */
+
+
+
+
+
+/* Blue Tick logic classes - Forceful */
+
+
+
+
+/* Jab tick grey ho */
+.unread-tick {
+    color: #8696a0 !important; 
+}
+
+/* Jab tick blue ho */
+.read-tick {
+    color: #34b7f1 !important; 
+}
+
     
     </style>
     
@@ -103,42 +601,71 @@
 </head>
 <body>
 
+
     <div id="login-screen">
         <div class="login-box">
-            <h3>WhatsApp Admin</h3>
+            <h3>WhatsApp login</h3>
             <input type="text" id="username" placeholder="Name">
             <input type="password" id="password" placeholder="Password">
             <button onclick="login()" style="width:100%; padding:12px; background:#00a884; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">LOG IN</button>
             <p id="error" style="color:#d32f2f; font-size:12px; margin-top:15px;"></p>
         </div>
     </div>
+    
+<div id="blur-overlay" onclick="closeError()" style="display: none;"></div>
 
-    <div id="chat-interface">
-        <div class="chat-header">
-            <div class="header-left">
-                <div class="header-avatar" id="user-initial">?</div>
-                <div>
-                    <div id="display-name" style="font-size: 16px; font-weight: 600;">Partner</div>
-                    <div id="user-status" class="status-text">Offline</div>
-                </div>
-            </div>
-            <div style="display: flex; gap: 15px; margin-right: 15px;">
-    <i class="fa-solid fa-phone" onclick="startCall()" style="cursor:pointer"></i>
-    <i class="fa-solid fa-video" onclick="startCall()" style="cursor:pointer"></i>
+
+
+<div id="error-popup" class="advanced-popup" style="display: none;">
+    <div class="popup-icon">
+        <i class="fa-solid fa-circle-exclamation"></i>
+    </div>
+    <h2 id="popup-title">Alert</h2>
+    <p id="error-message-text"></p>
+    <button class="popup-btn" onclick="closeError()">Got it</button>
 </div>
 
-            
-            <div style="font-size: 14px; cursor: pointer; opacity: 0.8;" onclick="logout()">Logout</div>
+
+
+
+
+
+
+    <div id="chat-interface">
+
+
+<div class="chat-header">
+    <div class="header-left">
+        <div class="header-avatar" id="user-initial">?</div>
+        <div>
+            <div id="display-name" style="font-size: 16px; font-weight: 600;">Partner</div>
+            <div id="user-status" class="status-text">Offline</div>
         </div>
+    </div>
+    <div class="header-right" style="position: relative;">
+        <i class="fa-solid fa-ellipsis-vertical" onclick="toggleMenu()" style="cursor: pointer; padding: 8px 12px; font-size: 18px;"></i>
+        
+        <div id="main-menu" class="dropdown-menu">
+            <div onclick="openSettings()">Settings</div>
+            <div onclick="logout()">Logout</div>
+        </div>
+    </div>
+</div>
         
         <div id="message-list"></div>
+<div class="input-bar-compressed">
+    <div class="input-capsule">
+        <input type="text" id="msg-input" placeholder="Message" 
+               oninput="handleTyping()" 
+               onkeydown="if(event.key==='Enter') sendMessage()">
+    </div>
+    <button class="send-btn-small" onmousedown="event.preventDefault()" onclick="sendMessage()">
+        <i class="fa-solid fa-paper-plane"></i>
+    </button>
+</div>
 
-        <div class="input-bar">
-            <input type="text" id="msg-input" placeholder="Type a message" 
-                   oninput="handleTyping()" 
-                   onkeydown="if(event.key==='Enter') sendMessage()">
-            <button class="send-btn" onclick="sendMessage()">➔</button>
-        </div>
+
+
     </div>
 
     <script>
@@ -154,158 +681,654 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const messaging = firebase.messaging();
         let currentUser = "";
         let typingTimeout;
 
-        window.onload = function() {
-            const savedUser = localStorage.getItem("ash_chat_user");
-            if (savedUser) setupChat(savedUser);
-        };
-
-        function login() {
-            const u = document.getElementById('username').value.trim();
-            const p = document.getElementById('password').value;
-            if ((u === "Zamir" && p === "123") || (u === "Abc" && p === "123")) {
-                localStorage.setItem("ash_chat_user", u);
-                setupChat(u);
-            } else {
-                document.getElementById('error').innerText = "Access Denied";
-            }
+        // Service Worker register karo (background notification ke liye)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                .then(reg => {
+                    console.log('Service Worker registered ✅');
+                    messaging.useServiceWorker(reg);
+                })
+                .catch(err => console.log('SW Error:', err));
         }
+
+        // Notification permission maango aur token Firebase mein save karo
+        function requestNotificationPermission() {
+            if (!currentUser) return;
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    messaging.getToken({ 
+                        vapidKey: 'BPJA7Q6LOD92SnkC-Z7tyAgtUQdz8tBvGrdijnNDkDKAyQNc84zdI2DTYZWasZbTFZwCnq5TXGsBnhIMq1-I4uU' 
+                    }).then((token) => {
+                        if (token) {
+                            db.ref('fcmTokens/' + currentUser).set(token);
+                            console.log('Token saved ✅');
+                        }
+                    }).catch(err => console.log('Token error:', err));
+                }
+            });
+        }
+
+        // Foreground notification - jab app khula ho tab bhi notification dikhe
+        messaging.onMessage((payload) => {
+            console.log('Foreground message:', payload);
+            if (payload.notification) {
+                new Notification(payload.notification.title, {
+                    body: payload.notification.body,
+                    icon: '/icon.png'
+                });
+            }
+        });
+
+
+// Sirf ye EK window.onload rakhein
+window.onload = () => {
+    const saved = localStorage.getItem("ash_chat_user");
+    
+    // Sabse pehle popup aur overlay ko hidden confirm karein
+    document.getElementById('error-popup').style.display = "none";
+    document.getElementById('blur-overlay').style.display = "none";
+
+    if (saved) {
+        // Agar pehle se login hai, toh seedha chat dikhao
+        setupChat(saved); 
+    } else {
+        // Agar login nahi hai, sirf tabhi login screen dikhao
+        document.getElementById('login-screen').style.display = "flex";
+        document.getElementById('chat-interface').style.display = "none";
+    }
+};
+
+function login() {
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value.trim();
+    const popup = document.getElementById('error-popup');
+    const overlay = document.getElementById('blur-overlay');
+    const msgText = document.getElementById('error-message-text');
+
+    // Reset animations
+    popup.classList.remove('pop-up-show', 'shake-denied');
+
+    let errorMessage = "";
+
+    if (u === "") {
+        errorMessage = "Please enter your Name";
+    } else if (p === "") {
+        errorMessage = "Please enter your Password";
+    } else if (u !== "Zamir" && u !== "Rahima") {
+        errorMessage = "Wrong Username!";
+    } else if (p !== "123") {
+        errorMessage = "Wrong Password! Access Denied.";
+    }
+
+    if (errorMessage !== "") {
+        msgText.innerText = errorMessage;
+        overlay.style.display = 'block';
+        
+        // Trigger Pop-in animation
+        popup.classList.add('pop-up-show');
+
+        // Agar user ya password galat hai, toh shake karein
+        if(errorMessage.includes("Wrong")) {
+            setTimeout(() => {
+                popup.classList.add('shake-denied');
+            }, 50);
+        }
+        return;
+    }
+
+    localStorage.setItem("ash_chat_user", u);
+    setupChat(u);
+}
+
+function closeError() {
+    const popup = document.getElementById('error-popup');
+    const overlay = document.getElementById('blur-overlay');
+
+    // 1. Animation classes remove karein taaki popup hide ho jaye
+    popup.classList.remove('pop-up-show', 'shake-denied');
+    
+    // 2. Direct display none karein safety ke liye
+    popup.style.display = 'none';
+    overlay.style.display = 'none';
+    
+    // 3. Error text saaf karein
+    document.getElementById('error-message-text').innerText = "";
+}
+
+
+
+// Popup dikhane ke liye helper function
+function showError(msg) {
+    document.getElementById('error-message-text').innerText = msg;
+    document.getElementById('error-popup').style.display = 'block';
+    document.getElementById('blur-overlay').style.display = 'block';
+}
+
+
+
 
         // --- NEW: Typing Logic ---
-        function handleTyping() {
-            db.ref('typing/' + currentUser).set(true);
-            
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => {
-                db.ref('typing/' + currentUser).set(false);
-            }, 2000); // Hide "Typing..." after 2 seconds of silence
-        }
 
-        function setupChat(user) {
-            currentUser = user;
-            const talkingTo = (user === "Zamir") ? "Abc" : "Zamir";
-            
-            document.getElementById('login-screen').style.display = "none";
-            document.getElementById('chat-interface').style.display = "flex";
-            document.getElementById('display-name').innerText = talkingTo;
-            document.getElementById('user-initial').innerText = talkingTo.charAt(0);
 
-            // Online/Offline Status
-            const myStatusRef = db.ref('status/' + user);
-            db.ref('.info/connected').on('value', (snapshot) => {
-                if (snapshot.val() === false) return;
-                myStatusRef.onDisconnect().set('offline');
-                myStatusRef.set('online');
+// --- 1. Global Presence & Status Logic ---
+
+// --- 1. ONLINE & LAST SEEN SETUP ---
+
+// --- 1. ONLINE & LAST SEEN SETUP ---
+function setupPresence() {
+    const userStatusRef = db.ref('status/' + currentUser);
+    const connectedRef = db.ref('.info/connected');
+    connectedRef.on('value', (snap) => {
+        if (snap.val() === true) {
+            userStatusRef.onDisconnect().set({
+                state: 'offline',
+                last_changed: firebase.database.ServerValue.TIMESTAMP
             });
-
-            // Monitor Partner's Status & Typing
-            db.ref('status/' + talkingTo).on('value', (statusSnap) => {
-                const status = statusSnap.val() || 'offline';
-                const statusElement = document.getElementById('user-status');
-
-                // Check Typing status from its own path
-                db.ref('typing/' + talkingTo).on('value', (typingSnap) => {
-                    if (typingSnap.val() === true) {
-                        statusElement.innerText = "typing...";
-                        statusElement.className = "status-text typing-indicator";
-                    } else {
-                        statusElement.innerText = status.charAt(0).toUpperCase() + status.slice(1);
-                        statusElement.className = "status-text " + status;
-                    }
-                });
-            });
-
-            loadMessages();
-        }
-
-        function logout() {
-            db.ref('status/' + currentUser).set('offline');
-            db.ref('typing/' + currentUser).set(false);
-            localStorage.removeItem("ash_chat_user");
-            location.reload();
-        }
-
-        function sendMessage() {
-            const inputField = document.getElementById('msg-input');
-            const text = inputField.value;
-            if (text.trim() === "") return;
-            
-            db.ref('typing/' + currentUser).set(false); // Stop typing status on send
-            const timeNow = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-            
-            db.ref('messages').push({
-                sender: currentUser,
-                text: text,
-                time: timeNow
-            });
-            inputField.value = "";
-        }
-
-        function loadMessages() {
-            const list = document.getElementById('message-list');
-            db.ref('messages').on('child_added', (snapshot) => {
-                const data = snapshot.val();
-                const isMe = data.sender === currentUser;
-                const bubble = document.createElement('div');
-                bubble.className = `msg-bubble ${isMe ? 'sent' : 'received'}`;
-                bubble.innerHTML = `
-                    <div>${data.text}</div>
-                    <div class="bubble-footer">
-                        <span class="msg-time">${data.time}</span>
-                        ${isMe ? '<span class="check-mark">✓✓</span>' : ''}
-                    </div>
-                `;
-                list.appendChild(bubble);
-                list.scrollTop = list.scrollHeight; 
+            userStatusRef.set({
+                state: 'online',
+                last_changed: firebase.database.ServerValue.TIMESTAMP
             });
         }
-        
-        
-        let api = null;
-
-function startCall(type) {
-    // Room name hamesha unique rakhein (Jaise: AshBakes_Zamir_Abc)
-    const roomName = "Zmr-WhatsApp"; 
-    document.getElementById('call-container').style.display = "block";
-    
-    const domain = "meet.jit.si";
-    const options = {
-        roomName: roomName,
-        width: '100%',
-        height: '100%',
-        parentNode: document.querySelector('#call-container'),
-        configOverwrite: { startWithAudioMuted: false, startWithVideoMuted: (type === 'audio') },
-        interfaceConfigOverwrite: { TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup', 'fittowindow'] },
-        userInfo: { displayName: currentUser }
-    };
-    
-    // Purana call api agar hai to delete karein
-    if (api) api.dispose();
-    
-    api = new JitsiMeetExternalAPI(domain, options);
-    
-    // Jab call khatam ho jaye automatically window band ho jaye
-    api.addEventListeners({
-        readyToClose: endCall,
-        videoConferenceLeft: endCall
     });
 }
 
-function endCall() {
-    if (api) api.dispose();
-    document.getElementById('call-container').style.display = "none";
+
+
+function checkOnlineStatus() {
+    let friendName = (currentUser === "Zamir") ? "Rahima" : "Zamir";
+    const statusElement = document.getElementById('user-status');
+
+    db.ref('status/' + friendName).on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        if (data.state === 'online') {
+            statusElement.innerText = "Online";
+            statusElement.style.color = "#00a884"; // Green for Online
+        } else {
+            // AM/PM Logic for Last Seen
+            const date = new Date(data.last_changed);
+            let hours = date.getHours();
+            let minutes = date.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12; 
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            const timeStr = hours + ':' + minutes + ' ' + ampm;
+            
+            statusElement.innerText = "last seen today at " + timeStr;
+            statusElement.style.color = "#667781"; // Grey for Last Seen
+        }
+    });
 }
+
+
+
+function setupChat(user) {
+    currentUser = user;
+    const talkingTo = (user === "Zamir") ? "Rahima" : "Zamir";
+    
+    document.getElementById('login-screen').style.display = "none";
+    document.getElementById('chat-interface').style.display = "flex";
+    document.getElementById('display-name').innerText = talkingTo;
+    document.getElementById('user-initial').innerText = talkingTo.charAt(0);
+
+    // Initial presence setup
+    setupPresence(user);
+
+    // --- 2. Monitor Friend's Status & Typing ---
+    const statusElement = document.getElementById('user-status');
+    let friendCurrentStatus = 'offline';
+
+    // Friend ka status listen karein
+    db.ref('status/' + talkingTo).on('value', (snapshot) => {
+        friendCurrentStatus = snapshot.val();
+        renderStatus(false); 
+    });
+
+    // Typing listener jo status ko override karega
+    db.ref('typing/' + talkingTo).on('value', (snapshot) => {
+        const isTyping = snapshot.val();
+        renderStatus(isTyping);
+    });
+
+    function renderStatus(typing) {
+        if (typing) {
+            statusElement.innerText = "typing...";
+            statusElement.className = "status-text typing-indicator";
+        } else if (friendCurrentStatus === 'online') {
+            statusElement.innerText = "Online";
+            statusElement.className = "status-text online";
+        } else if (friendCurrentStatus) {
+            const date = new Date(friendCurrentStatus);
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            statusElement.innerText = "last seen today at " + timeStr;
+            statusElement.className = "status-text offline";
+        } else {
+            statusElement.innerText = "Offline";
+            statusElement.className = "status-text offline";
+        }
+    }
+
+    loadMessages();
+    requestNotificationPermission();
+}
+
+
+function logout() {
+    if (currentUser) {
+        // Logout se pehle current time ko last seen set karein
+        db.ref('status/' + currentUser).set(Date.now()).then(() => {
+            db.ref('typing/' + currentUser).set(false);
+            localStorage.removeItem("ash_chat_user");
+            location.reload();
+        });
+    }
+}
+
+// Jab user page close kare
+window.addEventListener('beforeunload', () => {
+    if (currentUser) {
+        db.ref('status/' + currentUser).set(Date.now());
+        db.ref('typing/' + currentUser).set(false);
+    }
+});
+
+
+// Jab user tab close kare ya app minimize kare
+window.onbeforeunload = function() {
+    db.ref('status/' + currentUser).set(Date.now());
+};
+
+
+
+
+
+
+let holdTimer;
+let isSelectionMode = false;
+let selectedMessages = []; // Multi-select ke liye IDs yahan store hongi
+let currentMsgToDelete = null;
+
+function loadMessages() {
+    const list = document.getElementById('message-list');
+    
+    // 1. BLUE TICK UPDATER (Jab status change ho, icon color badle)
+    db.ref('messages').on('child_changed', (snapshot) => {
+        const data = snapshot.val();
+        const iconElement = document.getElementById("tick-" + snapshot.key);
+        if (iconElement && data.status === "read") {
+            iconElement.className = "fa-solid fa-check-double read-tick";
+        }
+    });
+
+    // 2. MESSAGE LOADER & SELECTION LOGIC
+    db.ref('messages').on('child_added', (snapshot) => {
+        const data = snapshot.val();
+        const msgId = snapshot.key;
+        const isMe = data.sender === currentUser;
+
+        // Auto-read logic
+        if (!isMe && data.status !== "read" && document.visibilityState === 'visible') {
+            db.ref('messages/' + msgId).update({ status: "read" });
+        }
+
+        const bubble = document.createElement('div');
+        bubble.id = "msg-" + msgId;
+        bubble.className = `msg-bubble ${isMe ? 'sent' : 'received'}`;
+        
+        // --- SELECTION LOGIC START ---
+        // Click logic: Agar selection mode ON hai toh click karne par select/unselect hoga
+        bubble.onclick = () => {
+            if (isSelectionMode) toggleMessageSelection(msgId);
+        };
+
+        // Hold logic: Sirf apne message par hold karne se mode start hoga
+        if (isMe) {
+            bubble.onmousedown = () => startHold(msgId);
+            bubble.onmouseup = () => clearHold();
+            bubble.ontouchstart = () => startHold(msgId); 
+            bubble.ontouchend = () => clearHold();
+        }
+        // --- SELECTION LOGIC END ---
+
+        let tickClass = (data.status === "read") ? "read-tick" : "unread-tick";
+        let statusHTML = isMe ? `<span class="status-icon">
+            <i id="tick-${msgId}" class="fa-solid fa-check-double ${tickClass}"></i>
+        </span>` : "";
+
+        bubble.innerHTML = `
+            <div class="msg-content">${data.text}</div>
+            <div class="bubble-footer">
+                <span class="msg-time">${data.time}</span>
+                ${statusHTML}
+            </div>
+        `;
+        
+        list.appendChild(bubble);
+        list.scrollTop = list.scrollHeight; 
+    });
+
+    // 3. DELETE LISTENER (Jab Firebase se delete ho toh screen se hat jaye)
+    db.ref('messages').on('child_removed', (snapshot) => {
+        const element = document.getElementById("msg-" + snapshot.key);
+        if (element) element.remove();
+    });
+
+    // 4. Presence & Typing Start
+    setupTypingListener();
+    setupPresence();
+}
+
+
+// 2. TYPING HANDLER (Likhte waqt database update karna)
+
+// --- 2. TYPING SYSTEM ---
+
+// --- 2. TYPING SYSTEM ---
+function handleTyping() {
+    db.ref('typing/' + currentUser).set(true);
+    clearTimeout(window.typingTimer);
+    window.typingTimer = setTimeout(() => {
+        db.ref('typing/' + currentUser).set(false);
+    }, 1500); 
+}
+
+
+function setupTypingListener() {
+    db.ref('typing').on('value', (snapshot) => {
+        const typingData = snapshot.val() || {};
+        const statusElement = document.getElementById('user-status');
+        let friendName = (currentUser === "Zamir") ? "Rahima" : "Zamir";
+
+        if (typingData[friendName] === true) {
+            statusElement.innerText = "typing...";
+            statusElement.style.color = "#ea4335"; // Red for Typing
+        } else {
+            // Typing khatam hone par wapas Online/Last Seen check karein
+            checkOnlineStatus();
+        }
+    });
+}
+
+
+
+// 3. SEND MESSAGE UPDATED (Message bhejte hi typing stop)
+
+// --- 3. SEND MESSAGE (With Typing Stop) ---
+
+// --- 3. SEND MESSAGE (AM/PM + Typing Stop) ---
+function sendMessage() {
+    const input = document.getElementById('msg-input');
+    const text = input.value.trim();
+    if (text === "") return;
+
+    // AM/PM Time Logic
+    const now = new Date();
+    let hours = now.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    let minutes = now.getMinutes().toString().padStart(2, '0');
+    const timeStr = `${hours}:${minutes} ${ampm}`;
+
+    db.ref('messages').push({
+        sender: currentUser,
+        text: text,
+        time: timeStr,
+        status: "sent" // Default status
+    });
+
+    input.value = "";
+    db.ref('typing/' + currentUser).set(false);
+    clearTimeout(window.typingTimer);
+    document.getElementById('message-list').scrollTop = document.getElementById('message-list').scrollHeight;
+}
+
+
+
+// Typing handle function (Input field ke liye)
+
+
+// Typing handle function (Input field ke liye)
+
+
+
+
+
+// --- Selection Logic Functions ---
+
+function startHold(id) {
+    if (isSelectionMode) return; // Mode on hai toh timer nahi chalega
+    
+    if (navigator.vibrate) navigator.vibrate(40);
+    holdTimer = setTimeout(() => {
+        enterSelectionMode(id);
+    }, 800); 
+}
+
+function clearHold() {
+    clearTimeout(holdTimer);
+}
+
+function enterSelectionMode(id) {
+    isSelectionMode = true;
+    document.getElementById('selection-bar').style.display = 'flex';
+    toggleMessageSelection(id);
+}
+
+function toggleMessageSelection(id) {
+    const el = document.getElementById("msg-" + id);
+    const index = selectedMessages.indexOf(id);
+
+    if (index > -1) {
+        selectedMessages.splice(index, 1);
+        el.classList.remove('selected');
+    } else {
+        selectedMessages.push(id);
+        el.classList.add('selected');
+    }
+
+    document.getElementById('select-count').innerText = selectedMessages.length;
+    if (selectedMessages.length === 0) exitSelectionMode();
+}
+
+function exitSelectionMode() {
+    isSelectionMode = false;
+    selectedMessages.forEach(id => {
+        const el = document.getElementById("msg-" + id);
+        if (el) el.classList.remove('selected');
+    });
+    selectedMessages = [];
+    document.getElementById('selection-bar').style.display = 'none';
+}
+
+function deleteSelectedMessages() {
+    if (confirm(`Delete ${selectedMessages.length} messages for everyone?`)) {
+        selectedMessages.forEach(id => {
+            db.ref('messages/' + id).remove();
+        });
+        exitSelectionMode();
+    }
+}
+
+// Purane Modal functions bhi barkarar hain
+
+
+
+// Professional Modal Functions
+function openDeleteModal(id) {
+    currentMsgToDelete = id;
+    const overlay = document.getElementById('delete-overlay');
+    const modal = document.getElementById('delete-modal');
+    const modalText = document.getElementById('delete-modal-text');
+
+    // Agar multi-select hai toh text badal jaye
+    if (isSelectionMode && selectedMessages.length > 1) {
+        modalText.innerText = `Delete ${selectedMessages.length} messages for everyone in this chat?`;
+    } else {
+        modalText.innerText = "This message will be deleted for everyone in this chat.";
+    }
+
+    overlay.style.display = 'block';
+    modal.style.display = 'block';
+    
+    // Final delete button ka kaam
+    document.getElementById('final-delete-btn').onclick = function() {
+        if (isSelectionMode && selectedMessages.length > 0) {
+            // Multi-delete logic
+            selectedMessages.forEach(msgId => {
+                db.ref('messages/' + msgId).remove();
+            });
+            exitSelectionMode();
+        } else if (currentMsgToDelete) {
+            // Single delete logic
+            db.ref('messages/' + currentMsgToDelete).remove();
+        }
+        closeDeleteModal();
+    };
+}
+
+function closeDeleteModal() {
+    document.getElementById('delete-overlay').style.display = 'none';
+    document.getElementById('delete-modal').style.display = 'none';
+    currentMsgToDelete = null;
+}
+
+function deleteSelectedMessages() {
+    if (selectedMessages.length > 0) {
+        openDeleteModal(null); // Modal open karein bina single ID ke
+    }
+}
+
+
+
+        // Dropdown toggle karne ke liye
+function toggleMenu() {
+    const menu = document.getElementById('main-menu');
+    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+}
+
+// Settings Modal ko kholne ke liye
+function openSettings() {
+    document.getElementById('settings-modal').style.display = 'flex';
+    document.getElementById('main-menu').style.display = 'none';
+}
+
+// Firebase se History saaf karne ka function
+function confirmClearChat() {
+    if (confirm("Do you want to clear all messages for everyone?")) {
+        db.ref('messages').remove().then(() => {
+            document.getElementById('message-list').innerHTML = ""; // Screen saaf karein
+            alert("Chat History Deleted.");
+            closeChatHistory();
+            closeSettings();
+        }).catch(err => alert("Error: " + err.message));
+    }
+}
+
+// Menu ke bahar click karne par menu apne aap band ho jaye
+window.onclick = function(event) {
+    if (!event.target.matches('.fa-ellipsis-vertical')) {
+        const menu = document.getElementById('main-menu');
+        if (menu) menu.style.display = 'none';
+    }
+};
+
+
+function openSettings() {
+    document.getElementById('settings-modal').style.display = 'flex';
+    document.getElementById('main-menu').style.display = 'none';
+}
+
+function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+
+function openChatHistory() { document.getElementById('history-modal').style.display = 'flex'; }
+
+function closeChatHistory() { document.getElementById('history-modal').style.display = 'none'; }
+
+function confirmClearChat() {
+    if (confirm("Are you sure you want to delete all messages?")) {
+        // Firebase se messages delete karna
+        db.ref('messages').remove().then(() => {
+            alert("Chat history cleared!");
+            document.getElementById('message-list').innerHTML = "";
+            closeChatHistory();
+            closeSettings();
+        });
+    }
+}
+
+// Menu ke bahar click karne par menu band ho jaye
+window.onclick = function(event) {
+    if (!event.target.matches('.fa-ellipsis-vertical')) {
+        document.getElementById('main-menu').style.display = 'none';
+    }
+}
+
+// Bubble creation ke waqt ye add karein
+bubble.oncontextmenu = function(event) {
+    event.preventDefault(); // Default copy/paste menu ko rokta hai
+    event.stopPropagation();
+    return false;
+};
 
         
     </script>
     
-    <div id="call-container" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:9999;">
-    <button onclick="endCall()" style="position:absolute; top:20px; right:20px; z-index:10000; background:red; color:white; border:none; padding:10px 20px; border-radius:5px;">End Call</button>
+    
+    <div id="settings-modal" class="full-screen-modal" style="display: none;">
+    <div class="modal-header">
+        <i class="fa-solid fa-arrow-left" onclick="closeSettings()"></i>
+        <span>Settings</span>
+    </div>
+    <div class="modal-item" onclick="openChatHistory()">
+        <i class="fa-solid fa-message"></i>
+        <div>
+            <strong>Chats</strong>
+            <p>Theme, wallpapers, chat history</p>
+        </div>
+    </div>
 </div>
 
-    
+<div id="history-modal" class="full-screen-modal" style="display: none;">
+    <div class="modal-header">
+        <i class="fa-solid fa-arrow-left" onclick="closeChatHistory()"></i>
+        <span>Chat history</span>
+    </div>
+    <div class="modal-item" onclick="confirmClearChat()" style="color: #d32f2f;">
+        <i class="fa-solid fa-trash-can"></i>
+        <div>
+            <strong>Delete all chats</strong>
+            <p>This will clear all messages for everyone</p>
+        </div>
+    </div>
+</div>
+
+ <div id="delete-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:3000; backdrop-filter:blur(2px); transition: 0.3s;" onclick="closeDeleteModal()"></div>
+<div id="delete-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; width:85%; max-width:320px; padding:22px; border-radius:25px; z-index:3001; box-shadow:0 10px 25px rgba(0,0,0,0.2); animation: popIn 0.2s ease-out;">
+    <h3 style="color:#111b21; margin-bottom:12px; font-size:19px; font-weight: 500;">Delete message?</h3>
+    <p id="delete-modal-text" style="color:#667781; font-size:15px; margin-bottom:25px; line-height:1.4;">This message will be deleted for everyone in this chat.</p>
+    <div style="display:flex; justify-content:flex-end; gap:15px;">
+        <button onclick="closeDeleteModal()" style="background:none; border:none; color:#00a884; font-weight:600; font-size:14px; cursor:pointer; padding: 10px; text-transform: uppercase;">CANCEL</button>
+        <button id="final-delete-btn" style="background:none; border:none; color:#00a884; font-weight:600; font-size:14px; cursor:pointer; padding: 10px; text-transform: uppercase;">DELETE FOR EVERYONE</button>
+    </div>
+</div>
+
+
+<div id="selection-bar">
+    <i class="fa-solid fa-xmark" onclick="exitSelectionMode()" style="font-size: 20px; cursor: pointer;"></i>
+    <span id="select-count" style="font-size: 18px; flex: 1;">1</span>
+    <i class="fa-solid fa-trash-can" onclick="deleteSelectedMessages()" style="font-size: 20px; cursor: pointer;"></i>
+</div>
+
+<div id="selection-bar">
+    <i class="fa-solid fa-xmark" onclick="exitSelectionMode()" style="font-size: 20px; cursor: pointer;"></i>
+    <span id="select-count" style="font-size: 18px; flex: 1;">1</span>
+    <i class="fa-solid fa-trash-can" onclick="deleteSelectedMessages()" style="font-size: 20px; cursor: pointer;"></i>
+</div>
+
 </body>
-      </html>
-      
+</html>
